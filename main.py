@@ -1,8 +1,9 @@
 import time
 
 from PyQt5 import uic
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication, QMessageBox
 from PyQt5.QtGui import QStandardItemModel
+from PyQt5.QtCore import Qt
 import pyautogui
 
 UI_path = "ui.ui"
@@ -12,6 +13,7 @@ INIT_COL_NUM = 2
 
 DOSE = "dose.png"
 EFFECT = "effect.png"
+BOTH = "both.png"
 
 
 def locate(image_path):
@@ -59,17 +61,21 @@ class MainWindow:
         self.ui.run.clicked.connect(self._run)
 
     def _run(self):
+        # 改变鼠标样式
+        self.ui.setCursor(Qt.WaitCursor)
         # 数据获取
         data = self._get_data()  # list,[[d0,e0],[d1,e1],...]
         # 查找位置
         dose_x, dose_y = locate(DOSE)
         effect_x, effect_y = locate(EFFECT)
-        # 界面操作
-        for d in data:
-            click_input(dose_x, dose_y, d[0])
-            click_input(effect_x, effect_y, d[1])
-            pyautogui.press("enter")
-            time.sleep(0.1)
+        # 如果成功查找到位置则进行界面操作
+        if self._check(dose_x) and self._check(effect_x):
+            for d in data:
+                click_input(dose_x, dose_y, d[0])
+                click_input(effect_x, effect_y, d[1])
+                pyautogui.press("enter")
+        # 还原鼠标样式
+        self.ui.setCursor(Qt.ArrowCursor)
 
     def _get_data(self):
         """获取表格内容"""
@@ -90,6 +96,13 @@ class MainWindow:
                 datas.pop()
                 break
         return datas
+
+    def _check(self, location):
+        if location is None:
+            QMessageBox.critical(self.ui, "Error", "未找到指定窗口，请保证指定窗口在屏幕上层！")
+            return False
+        else:
+            return True
 
 
 if __name__ == '__main__':
